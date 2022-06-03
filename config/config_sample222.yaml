@@ -2,7 +2,7 @@ inputs:
   ORthrehold: 2
   category: individual
   configname: config_sample222
-  date_interval_flag: 1
+  date_interval_flag: 3
   diseaseicd: '222'
   diseasejson: sample_222
   diseasename: sample222
@@ -11,7 +11,7 @@ inputs:
   noramaljson: sample_no222
   supthreshold: 0.01
 variables:
-  disease_count: 642
-  health_control_count: 642
-  health_count: 1221
-  kfoldtimes: 7
+  disease_count: 977
+  health_control_count: 977
+  health_count: 1858
+  kfoldtimes: 8
