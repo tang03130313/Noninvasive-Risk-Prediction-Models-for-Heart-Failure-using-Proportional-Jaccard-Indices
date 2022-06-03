@@ -1,0 +1,17 @@
+inputs:
+  ORthrehold: odds ratio threshold
+  category: individual stand for individual level, group stand for group level(we take ICD-9-CM for an example)
+  configname: this file name
+  date_interval_flag: disease data trace back interval
+  diseaseicd: this target disease icd
+  diseasejson: disease json file name
+  diseasename: disease names
+  health_endyear: health control group endyear (ex. 2010 -> A birth 195503 -> 2010-1935 = 55)
+  hospitialized: 0 stand for icd outpatient, 1 stand for icd emergency and hospitalization
+  noramaljson: health json file name
+  supthreshold: subject number threshold (by experimental group)
+variables:
+  disease_count: disease group count
+  health_control_count: health group count(for ml datasets)
+  health_count: health group count
+  kfoldtimes: k of kfold p.s. will use K ≈ log (n) and n/K > 3d (n the sample size, d the number of parameters, and a natural logarithm of base e)
