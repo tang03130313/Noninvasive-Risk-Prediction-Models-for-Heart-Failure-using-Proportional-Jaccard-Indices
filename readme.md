@@ -1,8 +1,8 @@
 # Using-Proportional-Jaccard-Indices-for-Identifying-Comorbidity-Patterns
 # How to run
-1. create conda environment in Python 3.6.12 (https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html)
+1. create conda environment in Python 3.8.13 (https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html)
 ```
-conda create --name test python=3.6
+conda create --name test python=3.8
 conda activate test
 ```
 2. install requirements packages
@@ -23,7 +23,7 @@ python index.py
 
 # Python files
 ## Flow Chart
-![image](https://github.com/tang03130313/Using-Weighted-Jaccard-Indices-for-Identifying-Comorbidity-Patterns/blob/main/images/flowchart.png)
+![image](https://github.com/tang03130313/Using-Proportional-Jaccard-Indices-for-Identifying-Comorbidity-Patterns/blob/main/images/flowchart.png)
 ### GenerateRadomJson.py
 + generate random  json file for an example
 ### GetIcdList  
@@ -35,7 +35,7 @@ python index.py
 + The classification codes of all comorbidity diseases were analyzed by evaluating corresponding odds ratios (ORs) associated with target disease
 + Processing data by minimum odds ratio threshold and add pseudo-counts
 + Construct a comorbidity feature set
-+ Calculating three similarity measurements including Jaccard index(JI), Weighted Jaccard index(WJI), Odds Ratio Weighted Jaccard index(ORWJI) (the comorbidity feature set vs the experiment group and the comorbidity feature set vs the control group)
++ Calculating three similarity measurements including Jaccard index(JI), Proportional Jaccard index(PJI), Odds Ratio Proportional Jaccard index(OPJI), Alpha Proportional Jaccard index (APJI) (the comorbidity feature set vs the experiment group and the comorbidity feature set vs the control group)
 ### ComorbidityML
 + Constructing four machine learning 
 + logistic regression (LR)
@@ -51,17 +51,17 @@ python index.py
 
 # config detail
 ### inputs
++ ORthrehold: odds ratio threshold
 + category: individual stand for individual level, group stand for group level(take ICD-9-CM for an example)
 + configname: this file name
 + date_interval_flag: disease data trace back interval
 + diseaseicd: this target disease icd
 + diseasejson: disease json file name
 + diseasename: disease names
-+ noramaljson: health json file name
-+ sup_filter: subject number filter (by experimental group)
-+ threhold: odds ratio threshold
 + health_endyear: health control group endyear (ex. end year = 2010 -> A birth 195503 -> 2010-1935 = 55 years old)
 + hospitialized: 0 stand for icd outpatient, 1 stand for icd emergency and hospitalization
++ noramaljson: health json file name
++ supthreshold: subject number filter (by experimental group)
 ### variables
 + disease_count: disease group count
 + health_control_count: health group count(for ml datasets)
