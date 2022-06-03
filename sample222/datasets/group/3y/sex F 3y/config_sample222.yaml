@@ -1,0 +1,17 @@
+inputs:
+  ORthrehold: 2
+  category: group
+  configname: config_sample222
+  date_interval_flag: 1
+  diseaseicd: '222'
+  diseasejson: sample_222
+  diseasename: sample222
+  health_endyear: 2010
+  hospitialized: 1
+  noramaljson: sample_no222
+  supthreshold: 0.01
+variables:
+  disease_count: 480
+  health_control_count: 480
+  health_count: 900
+  kfoldtimes: 8
