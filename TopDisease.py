@@ -4,7 +4,7 @@ import datetime
 import TopDiseaseFunc
 import os
 import yaml
-from config import category,health_count,disease_count,diseasename,diseaseicd,sup_filter
+from config import category,health_count,disease_count,diseasename,diseaseicd,supthreshold
 
 def Top_Disease(outfile):
 
