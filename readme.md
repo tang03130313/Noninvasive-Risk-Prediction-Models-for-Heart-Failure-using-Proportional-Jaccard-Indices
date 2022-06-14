@@ -23,7 +23,7 @@ python index.py
 
 # Python files
 ## Flow Chart
-![image](https://github.com/tang03130313/Using-Proportional-Jaccard-Indices-for-Identifying-Comorbidity-Patterns/blob/main/images/flowchart.png)
+![image](https://github.com/tang03130313/Using-Proportional-Jaccard-Indices-to-Identify-Comorbidity-Patterns-of-Heart-Failure/blob/main/images/flowchart.png)
 ### GenerateRadomJson.py
 + generate random  json file for an example
 ### GetIcdList  
