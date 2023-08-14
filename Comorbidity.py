@@ -5,8 +5,9 @@ import os
 import yaml
 import xlrd
 from shutil import copyfile
-from config import category,health_count,disease_count,diseasename,diseaseicd,ORthrehold, supthreshold
+from config import category,health_count,disease_count,diseasename,diseaseicd,ORthrehold, sup_filter
 from scipy.stats import nchypergeom_fisher
+import scipy.stats as stats
 import math
 def get_df_outer(df_outer, df1_sup_sum, df2_sup_sum, df1_pNum, df2_pNum):
     # pseudo count
@@ -61,13 +62,23 @@ def get_df_outer_2(df_outer, df1_sup_sum, df2_sup_sum, df1_pNum, df2_pNum):
     df_outer['OR'] = np.where((pd.isnull(df_outer['#SUP_y'])),
                               float("inf"),
                               df_outer['OR_x'] / df_outer['OR_y'])
-    #Alpha
+     #test P
+    '''df_outer['P_x'] =  np.where((pd.isnull(df_outer['#SUP_x'])),
+                                np.nan,
+                                hypergeom.pmf(df_outer['#SUP_x'], df_outer['#SUP_x']+df_outer['No#SUP_x']+df_outer['#SUP_y']+df_outer['No#SUP_y'], df_outer['#SUP_x']+df_outer['No#SUP_x'], df_outer['#SUP_x']+df_outer['#SUP_y'], 0))
+    df_outer['P_y'] =  np.where((pd.isnull(df_outer['#SUP_x'])),
+                                np.nan,
+                                hypergeom.pmf(0, df_outer['#SUP_x']+df_outer['No#SUP_x']+df_outer['#SUP_y']+df_outer['No#SUP_y'], df_outer['#SUP_x']+df_outer['No#SUP_x'], df_outer['#SUP_y'], 0))
+    df_outer['Pmf_1'] = (df_outer['P_x']/(1-df_outer['P_x'])) /(df_outer['P_y']/(1-df_outer['P_y']))
+    df_outer['Pmf_1'].apply(lambda x: float(x))
+    df_outer['Pmf_2'] = np.log(df_outer['Pmf_1'])'''
     Y = df_outer['#SUP_y'].fillna(value=0)
     NoY = df_outer['No#SUP_y'].fillna(value=df2_pNum)
     X = df_outer['#SUP_x'].fillna(value=0)
     NoX = df_outer['No#SUP_x'].fillna(value=df1_pNum)
+    #X , N, ma, mb = X, df_outer['#SUP_x']+df_outer['No#SUP_x']+df_outer['#SUP_y']+df_outer['No#SUP_y'], df_outer['#SUP_x']+df_outer['No#SUP_x'], df_outer['#SUP_x']+df_outer['#SUP_y']
     x , N, ma, mb = X, X+NoX+Y+NoY, X+NoX, X+Y
-    odds = math.exp(0)
+    odds = math.exp(0)#0.1
     df_outer["p1"] = 1 - nchypergeom_fisher.cdf(x-1, N, ma, mb, odds)
     df_outer["p2"] = nchypergeom_fisher.cdf(x, N, ma, mb, odds)
     df_outer["a1"] = df_outer["p1"] + nchypergeom_fisher.cdf(nchypergeom_fisher.ppf(df_outer["p1"], N, ma, mb, odds) - 1, N, ma, mb, odds)
@@ -84,6 +95,10 @@ def write_Excel_OR(df, outfile):
     writer.save() 
     print('寫檔 : '+diseasename+"/"+category+'/Comorbidity/' + outfile + '.xlsx')
 
+def zscore_to_tscore(z_score, sample_size, degrees_of_freedom):
+    critical_value = stats.t.ppf((1 + 0.95) / 2, df=degrees_of_freedom)  # 95% confidence level
+    t_score = z_score * (sample_size ** 0.5) / critical_value
+    return t_score
 
 def Intersection(readfile1, readfile2, df1_pNum, df2_pNum, ifOR, thresholdOR, PJI):
     df1 = pd.read_excel(readfile1 + '.xlsx')  # , dtype = {'pattern' : str})
@@ -99,35 +114,54 @@ def Intersection(readfile1, readfile2, df1_pNum, df2_pNum, ifOR, thresholdOR, PJ
     df1_outer = get_df_outer_2(df1_outer, df1_sup_sum, df2_sup_sum, df1_pNum, df2_pNum)
     df2_outer = get_df_outer_2(df2_outer, df2_sup_sum, df1_sup_sum, df2_pNum, df1_pNum)
 
-    output_outer = df2_outer[['pattern','#SUP_x', 'No#SUP_x','#SUP_y', 'No#SUP_y',"OR_2"]]
-    output_outer.rename(columns={'pattern': 'ICD', '#SUP_x': 'Disease Suffer', 'No#SUP_x': 'Disease Non-Suffer', '#SUP_y': 'Health Suffer', 'No#SUP_y': 'Health Non-Suffer', 'OR_2':'Odds Ratio'}, inplace=True)
-    output_outer = output_outer.loc[(output_outer['Disease Suffer'] >= disease_count*supthreshold) & (output_outer['Odds Ratio'] >= ORthrehold)].sort_values(by='Odds Ratio', ascending=False)
+    output_outer = df2_outer#[['pattern','#SUP_x', 'No#SUP_x','#SUP_y', 'No#SUP_y',"OR_2"]]
+    #output_outer.rename(columns={'pattern': 'ICD', '#SUP_x': 'Disease Suffer', 'No#SUP_x': 'Disease Non-Suffer', '#SUP_y': 'Health Suffer', 'No#SUP_y': 'Health Non-Suffer', 'OR_2':'Odds Ratio'}, inplace=True)
+    #output_outer = output_outer.loc[(output_outer['Disease Suffer'] >= disease_count*sup_filter) & (output_outer['Odds Ratio'] >= ORthrehold)].sort_values(by='Odds Ratio', ascending=False)
     output_outer.to_excel(diseasename+"/"+category+'/Comorbidity/' + 'comorbidity feature set '+category+ '.xlsx', freeze_panes=(1, 1))  
     
     if ifOR != "":
         if PJI == "PJI":
             def threshold(x):
-                if (x[ifOR+"_2"] < thresholdOR ) or x['#SUP_x'] <  disease_count * supthreshold:
+                if (x[ifOR+"_2"] < thresholdOR ) or x['#SUP_x'] <  disease_count * sup_filter:
                     return 1
                 else:
                     return x['#SUP_x']
         elif PJI == "OPJI":
             def threshold(x):
-                if (x[ifOR+"_2"] < thresholdOR ) or x['#SUP_x'] <  disease_count * supthreshold:
+                if (x[ifOR+"_2"] < thresholdOR ) or x['#SUP_x'] <  disease_count * sup_filter:
+                #if x['#SUP_x'] <  disease_count * sup_filter or ( (x["alpha"] > 0.000001 ) and (x[ifOR+"_2"] < thresholdOR))
                     return 1
                 else:
                     return x['#SUP_x']*x["OR_norm"]
             def norm_OR(df_outer, normalize):
-                normalize = df_outer.loc[(df_outer[ifOR+"_2"] >= thresholdOR ) & (df_outer["#SUP_x"] >= disease_count * supthreshold)]["OR_norm_tmp"].tolist()
+                print(df_outer)
+                normalize = df_outer.loc[(df_outer[ifOR+"_2"] >= thresholdOR ) & (df_outer["#SUP_x"] >= disease_count * sup_filter)]["OR_norm_tmp"].tolist()
                 mean_norm = np.mean(normalize)
                 std_norm = np.std(normalize)
+                print(normalize)
+                min_norm = min(normalize)
+                z_norm = max(normalize)-min(normalize)
                 tmp_list = []
+                tmp_list_2 = []
+                n = df_outer["OR_norm_tmp"].count()
+                degrees_of_freedom = n - 1
                 for (index,item) in enumerate(df_outer["OR_norm_tmp"].tolist()):
-                    if df_outer[ifOR+"_2"][index] < thresholdOR or df_outer["#SUP_x"][index] < disease_count * supthreshold:
+                    if df_outer[ifOR+"_2"][index] < thresholdOR or df_outer["#SUP_x"][index] < disease_count * sup_filter:
                         tmp_list.append(0)
                     else:
-                        tmp = round((item-mean_norm)/std_norm*10+10,2)
+                        #tmp = round((item-mean_norm)/std_norm*10+10,2)
+                        tmp = zscore_to_tscore((item-mean_norm)/std_norm, n, degrees_of_freedom)
                         tmp_list.append(tmp)
+                        #tmp_list_2.append(tmp)
+                '''tmp_list_2.sort()
+                count = 0
+                final = tmp_list_2[0]
+                while final < 0:
+                    final+=1
+                    count+=1
+                for (index,item) in enumerate(tmp_list):
+                    if item != 0:
+                        tmp_list[index] = item+count'''
                 for (index,item) in enumerate(tmp_list):
                     if item < 0:
                         tmp_list[index] = 0.5
@@ -135,22 +169,29 @@ def Intersection(readfile1, readfile2, df1_pNum, df2_pNum, ifOR, thresholdOR, PJ
                     
         elif PJI == "APJI":
             def threshold(x):
-                if x[ifOR+"_2"]< thresholdOR or  x['#SUP_x'] <  disease_count * supthreshold:
+                if x[ifOR+"_2"]< thresholdOR or  x['#SUP_x'] <  disease_count * sup_filter:
                     return 1
                 else:
                     return x['#SUP_x']*x["alpha_norm"] 
             def norm_alpha(df_outer, normalize):
-                tmp = (df_outer.loc[(df_outer[ifOR+"_2"] >= thresholdOR) &(df_outer["#SUP_x"] >= disease_count * supthreshold)]["alpha"]).tolist()
+                tmp = (df_outer.loc[(df_outer[ifOR+"_2"] >= thresholdOR) &(df_outer["#SUP_x"] >= disease_count * sup_filter)]["alpha"]).tolist()
                 tmp = [i for i in tmp if i != 0]
                 min_threshold = min(tmp)
-                normalize = (df_outer.loc[(df_outer[ifOR+"_2"] >= thresholdOR)  & (df_outer["alpha"] <= min_threshold*1000) &(df_outer["#SUP_x"] >= disease_count * supthreshold)]["alpha_norm_tmp"]).tolist()
+                print(min_threshold)
+                print(min_threshold*1000)
+                #normalize = (df_outer.loc[(df_outer["alpha"] <= 0.00000001 ) & (df_outer["#SUP_x"] >= disease_count * sup_filter)]["alpha_norm_tmp"]).tolist()
+                normalize = (df_outer.loc[(df_outer[ifOR+"_2"] >= thresholdOR)  & (df_outer["alpha"] <= 0.3) &(df_outer["#SUP_x"] >= disease_count * sup_filter)]["alpha_norm_tmp"]).tolist()
+                #normalize = [1-i for i in normalize] & (df_outer["alpha"] <= 0.000000001)
+                df_outer.to_excel(diseasename+"/"+category+'/Comorbidity/' + 'comorbidity feature set_2222 '+category+ '.xlsx', freeze_panes=(1, 1))  
+                min_norm = min(normalize)
+                z_norm = max(normalize)-min(normalize)
                 mean = np.mean(normalize)
                 std_norm = np.std(normalize)
                 tmp_list = []
                 #tmp_list_2 = []
                 for (index,item) in enumerate(df_outer["alpha_norm_tmp"].tolist()):
-                    #if df_outer["alpha"][index] > 0.00000001 or df_outer["#SUP_x"][index] < disease_count * supthreshold:
-                    if df_outer[ifOR+"_2"][index] < thresholdOR or df_outer["#SUP_x"][index] < disease_count * supthreshold:
+                    #if df_outer["alpha"][index] > 0.00000001 or df_outer["#SUP_x"][index] < disease_count * sup_filter:
+                    if df_outer[ifOR+"_2"][index] < thresholdOR or df_outer["#SUP_x"][index] < disease_count * sup_filter:
                         tmp_list.append(0)
                     else:
                         tmp = round((item-mean)/std_norm*10+10,2)
@@ -176,8 +217,8 @@ def Intersection(readfile1, readfile2, df1_pNum, df2_pNum, ifOR, thresholdOR, PJ
         elif PJI == "APJI":
             tmp = 1-df1_outer_OR["alpha"]
             normalize_alpha = tmp.tolist()
-            df1_outer_OR["alpha_norm"] =  pd.Series([(float(i)-np.mean(normalize_alpha))/(np.std(normalize_alpha)) for i in normalize_alpha])
-            #df1_outer_OR["alpha_norm"] = norm_alpha(df1_outer_OR, normalize_alpha)
+            df1_outer_OR["alpha_norm_tmp"] =  pd.Series([(float(i)-np.mean(normalize_alpha))/(np.std(normalize_alpha)) for i in normalize_alpha])
+            df1_outer_OR["alpha_norm"] = norm_alpha(df1_outer_OR, normalize_alpha)
 
             tmp = 1-df2_outer_OR["alpha"]
             normalize_alpha = tmp.tolist()
