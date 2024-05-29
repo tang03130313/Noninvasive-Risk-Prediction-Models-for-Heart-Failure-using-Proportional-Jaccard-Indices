@@ -1,4 +1,4 @@
-# Using-Proportional-Jaccard-Indices-for-Identifying-Comorbidity-Patterns
+# Noninvasive-Risk-Prediction-Models-for-Heart-Failure-using-Proportional-Jaccard-Indices
 # How to run
 1. create conda environment in Python 3.8.13 (https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html)
 ```
@@ -23,7 +23,7 @@ python index.py
 
 # Python files
 ## Flow Chart
-![image](https://github.com/tang03130313/Using-Proportional-Jaccard-Indices-to-Identify-Comorbidity-Patterns-of-Heart-Failure/blob/main/images/flowchart.png)
+![image](https://github.com/tang03130313/Noninvasive-Risk-Prediction-Models-for-Heart-Failure-using-Proportional-Jaccard-Indices/blob/main/images/flowchart.png)
 ### GenerateRadomJson.py
 + generate random  json file for an example
 ### GetIcdList  
